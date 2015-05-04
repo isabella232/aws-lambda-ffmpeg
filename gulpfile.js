@@ -12,17 +12,10 @@ var zip = require('gulp-zip');
 var AWS = require('aws-sdk');
 var runSequence = require('run-sequence');
 
-var filename = './build/ffmpeg-git-64bit-static.tar.xz';
+var filename = './vendor/ffmpeg-git-64bit-static.tar.xz';
 
-gulp.task('download-ffmpeg', function(cb) {
-	var file = fs.createWriteStream(filename);
-	http.get('http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz', function(response) {
-		response.pipe(file);
-
-		file.on('finish', function() {
-			file.close();
-			cb();
-		})
+gulp.task('create-build-dir', function() {
+	fs.mkdir('build/', function() {
 	});
 });
 
@@ -31,7 +24,7 @@ gulp.task('untar-ffmpeg', shell.task([
 ]));
 
 // This is still buggy
-gulp.task('copy-ffmpeg', ['download-ffmpeg', 'untar-ffmpeg'], function() {
+gulp.task('copy-ffmpeg', ['create-build-dir', 'untar-ffmpeg'], function() {
 	gulp.src('build/ffmpeg-*/ffmpeg')
 		.pipe(flatten())
 		.pipe(gulp.dest('./dist'));
