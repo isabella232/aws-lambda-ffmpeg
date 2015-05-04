@@ -77,8 +77,10 @@ function getffmpeg(dstBucket, keyPrefix, description, context) {
 	ffmpeg.on('exit', function (code, signal) {
 		console.log('ffmpeg done');
 
-		if (code)
-			return context.fail('ffmpeg Error code:' + code.toString() + 'signal:' + signal.toString());
+		if (code) {
+			console.log(code.toString());
+			return context.fail('ffmpeg Error code:' + code.toString() + 'signal:' + signal);
+		}
 
 		async.parallel(
 			[
@@ -112,24 +114,19 @@ function uuid2shorturl(id) {
 		.replace(/\//g, '_');
 }
 
+//Main handler
 exports.handler = function(event, context) {
+	console.log('starting function');
 	// http://stackoverflow.com/questions/27708573/aws-lambda-making-video-thumbnails
 	child_process.exec('cp /var/task/ffmpeg /tmp/.; chmod 755 /tmp/ffmpeg;', function(error, stdout, stderr) {
-		if (error)
+		if (error) {
+			console.log(stdout);
+			console.log(stderr);
 			return context.fail('Error', error);
+		}
 
-		console.log("Reading options from event:\n", util.inspect(event, {depth: 5}));
-		var srcBucket = event.Records[0].s3.bucket.name;
-		var srcKey = decodeURIComponent(event.Records[0].s3.object.key);
-		var dstBucket = config.destinationBucket;
-		var keyPrefix = srcKey.replace(/\.[^/.]+$/, '');
-
-		// Key structure on source bucket is 3 folders deep with a UUID filename
-		var shortlink = config.linkPrefix + uuid2shorturl(keyPrefix.split('/')[2]);
-
-		console.log('starting download');
-
-		var readStream = downloadStream(srcBucket, srcKey, context);
-		readStream.pipe(getffmpeg(dstBucket, keyPrefix, shortlink, context).stdio[0]);
+		console.log(event);
+		context.succeed(event);
+		return;
 	});
 };
